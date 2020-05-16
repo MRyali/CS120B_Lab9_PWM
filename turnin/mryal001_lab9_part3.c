@@ -53,78 +53,50 @@ void PWM_off() {
 	TCCR0B = 0x00;
 }
 
-enum States {Start, wait, c4, d4, e4} state;
+enum States{Start, off, play} state;
 
 unsigned char button0;
-unsigned char button1;
-unsigned char button2;
 
-void Tick() {
-    switch(state) {
-        case Start:
-            state = Wait;
-            break;
-        case wait: //wait for button push
-            if (button0) {
-                state = c4;
-            }
-            else if (button1){
-                state = d4;
-            }
-            else if (button2){
-                state = e4;
-            }
-            else {
-                state = wait;
-            }
-            break;
-        case c4:
-            if (button0) { //button is held
-                state = c4;
-            }
-            else { //otherwise wait for new button press
-                state = wait;
-            }
-            break;
-        case d4:
-            if (button1) { //button is held
-                state = d4;
-            }
-            else { //otherwise wait for new button press
-                state = wait;
-            }
-            break;
-        case e4:
-            if (button2) { //button is held
-                state = e4;
-            }
-            else { //otherwise wait for new button press
-                state = wait;
-            }
-            break;
-        default:
-            state = Start;
-            break;
-    }
-    switch(state) {
-        case Start:
-            break;
-        case wait:
-            set_PWM(0);
-            break;
-        case c4:
-            set_PWM(261.63);
-            break;
-        case d4:
-            set_PWM(293.66);
-            break;
-        case e4:
-            set_PWM(329.63);
-            break;
-        default:
-            break;
-    }
+const double notes[26] = {329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 392.00, 261.63, 293.66, 329.63, 349.23, 349.23, 349.23, 349.23, 349.23, 329.63, 329.63, 329.63, 329.63, 329.63, 293.66, 293.66, 329.63, 293.66, 392.00 };
+unsigned char i = 0x00;
+unsigned char j = 0x00;
+
+void button_Tick(){
+	buttonPress = ~PINA & 0x01;
+	switch(state){ // Transitions
+		case off:
+			if(button0){
+				i = 0;
+				j = 0;
+				state = play;
+			}
+			else
+				state= off;
+			break;
+		case play:
+			if(j < 2){
+				state = play;
+			}
+			else{
+				state = off;
+			}
+			if(i > 25){
+				j++;
+			}
+			i++;
+			break;
+	}
+	switch(state){ // State actions
+		case off:
+			set_PWM(0); //turn off
+			break;
+		case play:
+			set_PWM(notes[i]); //play note
+			set_PWM(0); //end laying note
+			break;
+	}
 }
+
 
 int main(void) {
     DDRA = 0x00; PORTA = 0xFF; // input
@@ -135,9 +107,6 @@ int main(void) {
 
     while (1) {
         button0 = ~PINA & 0x01;
-        button1 = ~PINA & 0x02;
-        button2 = ~PINA & 0x04;
-
         Tick();
     }
     return 1;
