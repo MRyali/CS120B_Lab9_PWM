@@ -53,7 +53,7 @@ void PWM_off() {
 	TCCR0B = 0x00;
 }
 
-enum States {Start, push, release, inc, dec} state;
+enum States {Start, push, release, inc, dec, on, off} state;
 
 unsigned char button0; //inc
 unsigned char button1; //dec
@@ -65,33 +65,33 @@ unsigned char power = 0; //0 means off, 1 means on
 unsigned char s = 0; //tracks increase (1), decrease (2), off (3), or on (4)
 
 void Tick() {
-    switch(state) {
-        case Start:
-            state = Wait;
-            break;
-        case push: //wait for button push
-            if (button0 && power = 1) {
+	switch(state) {
+        	case Start:
+            		state = Wait;
+            		break;
+        	case push: //wait for button push
+			if (button0 && power == 1) {
 				s = 1;
-                state = release;
-            }
-            else if (button1 && power = 1){
+                		state = release;
+            		}
+            		else if (button1 && power = 1){
 				s = 2;
-                state = release;
-            }
-            else if (button2){
+                		state = release;
+            		}
+            		else if (button2){
 				if (power == 0) {
 					s = 4;
-                	state = release;
+                			state = release;
 				}
 				else {
 					s = 3;
-                	state = release;
+                			state = release;
 				}
-            }
-            else {
-                state = wait;
-            }
-            break;
+            		}
+            		else {
+                		state = wait;
+           		}
+            		break;
 		case release:
 			if (s == 1 && !button0) {
 				state = inc;
@@ -108,72 +108,79 @@ void Tick() {
 			else {
 				state = release;
 			}
-        case inc:
+			break;
+        	case inc:
 			s = 0;
 			state = push;
+			break;
 		case dec:
 			s = 0;
 			state = push;
+			break;
 		case off:
 			s = 0;
 			power = 0;
 			state = push;
+			break;
 		case on:
 			s = 0;
 			power = 1;
 			state = push;
-        default:
-            state = Start;
-            break;
-    }
-    switch(state) {
-        case Start:
-            break;
-        case push:
-            set_PWM(0);
-            break;
-        case release:
-            set_PWM(261.63);
-            break;
+			break;
+        	default:
+            		state = Start;
+            		break;
+	}
+    	switch(state) {
+        	case Start:
+            		break;
+        	case push:
+            		set_PWM(0);
+            		break;
+        	case release:
+            		set_PWM(261.63);
+            		break;
 		case inc:
 			i++;
 			if (i > 7) {
 				i = 7;
 			}
 			set_PWM(notes[i]);
+			break;
 		case dec:
 			i--;
 			if (i < 0) {
 				i = 0;
 			}
 			set_PWM(notes[i]);
-        case off:
+			break;
+       		 case off:
 			PWM_off();
 			set_PWM(0);
-            break;
-        case on:
-            PWM_on();
+			break;
+        	case on:
+            		PWM_on();
 			set_PWM(notes[i]);
-            break;
-        default:
-            break;
-    }
+            		break;
+        	default:
+            		break;
+    	}
 }
 
 int main(void) {
-    DDRA = 0x00; PORTA = 0xFF; // input
+    	DDRA = 0x00; PORTA = 0xFF; // input
 	DDRB = 0xFF; PORTB = 0x00; // output
 
-    PWM_on();
+    	PWM_on();
 	state = Start;
 	power = 1;
 
-    while (1) {
-        button0 = ~PINA & 0x01;
-        button1 = ~PINA & 0x02;
-        button2 = ~PINA & 0x04;
+    	while (1) {
+        	button0 = ~PINA & 0x01;
+        	button1 = ~PINA & 0x02;
+        	button2 = ~PINA & 0x04;
 
-        Tick();
-    }
-    return 1;
+        	Tick();
+    	}
+    	return 1;
 }

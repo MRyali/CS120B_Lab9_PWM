@@ -62,7 +62,7 @@ unsigned char button2;
 void Tick() {
     switch(state) {
         case Start:
-            state = Wait;
+            state = wait;
             break;
         case wait: //wait for button push
             if (button0) {

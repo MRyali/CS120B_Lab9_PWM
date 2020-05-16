@@ -62,7 +62,7 @@ unsigned char button2;
 void Tick() {
     switch(state) {
         case Start:
-            state = Wait;
+            state = wait;
             break;
         case wait: //wait for button push
             if (button0) {
@@ -127,18 +127,18 @@ void Tick() {
 }
 
 int main(void) {
-    DDRA = 0x00; PORTA = 0xFF; // input
+	DDRA = 0x00; PORTA = 0xFF; // input
 	DDRB = 0xFF; PORTB = 0x00; // output
 
-    PWM_on();
+   	PWM_on();
 	state = Start;
 
-    while (1) {
-        button0 = ~PINA & 0x01;
-        button1 = ~PINA & 0x02;
-        button2 = ~PINA & 0x04;
+    	while (1) {
+        	button0 = ~PINA & 0x01;
+        	button1 = ~PINA & 0x02;
+        	button2 = ~PINA & 0x04;
 
-        Tick();
-    }
-    return 1;
+        	Tick();
+    	}
+    	return 1;
 }
