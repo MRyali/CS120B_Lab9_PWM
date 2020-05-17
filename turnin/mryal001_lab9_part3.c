@@ -59,16 +59,14 @@ enum States{Start, off, play, wait, repeat, release} state;
 
 unsigned char button0;
 
-//const double notes[26] = {329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 392.00, 261.63, 293.66, 329.63, 349.23, 349.23, 349.23, 349.23, 349.23, 329.63, 329.63, 329.63, 329.63, 329.63, 293.66, 293.66, 329.63, 293.66, 392.00 };
 const double notes[32] = {523.25, 440.00, 349.23, 523.25, 440.00, 349.23, 523.25, 440.00,
 	493.88, 392.00, 329.63,493.88, 392.00, 329.63, 493.88, 392.00,
 	493.88, 392.00, 329.63,493.88, 392.00, 329.63, 493.88, 392.00,
-	440.00, 349.23, 293.66, 440.00, 349.23, 293.66, 440.00, 349.23,
-}
+	440.00, 349.23, 293.66, 440.00, 349.23, 293.66, 440.00, 349.23 };
 unsigned char i = 0;
 
 
-void button_Tick(){
+void Tick(){
 	switch(state) {
 		case Start:
 			state = off;
@@ -82,7 +80,7 @@ void button_Tick(){
 				state= off;
 			break;
 		case play:
-			if (i < 25) {
+			if (i < 31) {
 				i++;
 				state = play;
 			}
@@ -99,6 +97,7 @@ void button_Tick(){
 			}
 			break;
 		case repeat:
+			i = 0;
 			if (button0) {
 				state = release;
 			}
@@ -129,8 +128,10 @@ void button_Tick(){
 			//set_PWM(0); //end laying note
 			break;
 		case wait:
+			set_PWM(0);
 			break;
 		case repeat:
+			set_PWM(0);
 			break;
 		case release:
 			break;
@@ -144,7 +145,7 @@ int main(void) {
     	DDRA = 0x00; PORTA = 0xFF; // input
 	DDRB = 0xFF; PORTB = 0x00; // output
 
-	TimerSet(400);
+	TimerSet(215);
 	TimerOn();
 
    	PWM_on();
