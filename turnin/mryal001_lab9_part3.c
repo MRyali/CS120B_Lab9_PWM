@@ -107,7 +107,7 @@ void Tick(){
 			break;
 		case release:
 			if (!button0) {
-				state = off;
+				state = play;
 			}
 			else {
 				state = release;
@@ -125,7 +125,6 @@ void Tick(){
 			break;
 		case play:
 			set_PWM(notes[i]); //play note
-			//set_PWM(0); //end laying note
 			break;
 		case wait:
 			set_PWM(0);

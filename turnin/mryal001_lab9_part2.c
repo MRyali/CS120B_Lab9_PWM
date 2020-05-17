@@ -142,6 +142,7 @@ void Tick() {
 			else {
 				state = powerOff;
 			}
+			break;
         	default:
             		state = Start;
             		break;
