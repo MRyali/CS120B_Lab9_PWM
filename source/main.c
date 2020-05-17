@@ -1,7 +1,7 @@
 /*	Author: Mayur Ryali
  *  Partner(s) Name:
  *	Lab Section: 21
- *	Assignment: Lab #9  Exercise #2
+ *	Assignment: Lab #9  Exercise #3
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -11,7 +11,8 @@
 #include <avr/interrupt.h>
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
-
+#include "timer.h"
+#include "io.h"
 #endif
 
 // 0.954 hz is lowest frequency possible with this function,
@@ -54,139 +55,102 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum States {Start, push, inc, incRelease, dec, decRelease, on, off, powerOff} state;
+enum States{Start, off, play, wait, repeat, release} state;
 
-unsigned char button0; //inc
-unsigned char button1; //dec
-unsigned char button2; //off
+unsigned char button0;
 
-const double notes[8] = {261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25}; //array of frequencies
-unsigned char i = 0; //index for array
+const double notes[26] = {329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 329.63, 392.00, 261.63, 293.66, 329.63, 349.23, 349.23, 349.23, 349.23, 349.23, 329.63, 329.63, 329.63, 329.63, 329.63, 293.66, 293.66, 329.63, 293.66, 392.00 };
+unsigned char i = 0;
+unsigned char j = 0;
 
-void Tick() {
+void Tick(){
 	switch(state) {
-        	case Start:
-            		state = off;
-            		break;
-        	case push: //wait for button push
-			if (button0) { //increase
-				if (i < 7) {
-					i++;
-				}
-				state = inc;
-            		}
-            		else if (button1){ //decrease
-				if (i > 0) {
-					i--;
-				}
-                		state = dec;
-            		}
-            		else if (button2){ //turn off
-				state = powerOff;
-            		}
-            		else {
-                		state = push;
-           		}
-            		break;
-        	case inc:
-			/*
-			if (i < 7) { //next frequency
-				i++;
-			}*/
-			state = incRelease;
-			break;
-		case incRelease:
-			if (!button0) {
-				state = push;
-			}
-			else {
-				state = incRelease;
-			}
-			break;
-		case dec:
-			/*
-			if (i > 0) {
-				i--;
-			}*/
-			state = decRelease;
-			break;
-		case decRelease:
-			if (!button1) {
-				state = push;
-			}
-			else {
-				state = decRelease;
-			}
+		case Start:
+			state = off;
 			break;
 		case off:
-			if (button2) {
-				state = on;
+			if(button0){
+				i = 0;
+				state = play;
+			}
+			else
+				state= off;
+			break;
+		case play:
+			if (i < 25) {
+				i++;
+				state = play;
 			}
 			else {
-				state = off;
+				state = wait;
 			}
 			break;
-		case on:
-			if (!button2) {
-				state = push;
+		case wait:
+			if (!button0) {
+				state = repeat;
 			}
 			else {
-				state = on;
+				state = wait;
 			}
 			break;
-		case powerOff: 
-			if (!button2) {
+		case repeat:
+			if (button0) {
+				state = release;	
+			}
+			else {
+				state = wait;
+			}
+			break;
+		case release:
+			if (!button0) {
 				state = off;
 			}
 			else {
-				state = powerOff;
+				state = release;
 			}
-        	default:
-            		state = Start;
-            		break;
+			break;
+		default:
+			state = Start;
+			break;
 	}
-    	switch(state) {
-        	case Start:
-            		break;
-        	case push:
-            		break;
-		case inc:
-			set_PWM(notes[i]);
+	switch(state){
+		case Start:
 			break;
-		case incRelease:
+		case off:
+			set_PWM(0); //turn off
 			break;
-		case dec:
-			set_PWM(notes[i]);
+		case play:
+			set_PWM(notes[i]); //play note
+			//set_PWM(0); //end laying note
 			break;
-		case decRelease:
+		case wait:
 			break;
-       		case off:
-			PWM_off();
+		case repeat:
 			break;
-		case powerOff:
+		case release:
 			break;
-        	case on:
-            		PWM_on();
-            		break;
-        	default:
-            		break;
-    	}
+		default:
+			break;
+	}
 }
+
 
 int main(void) {
     	DDRA = 0x00; PORTA = 0xFF; // input
 	DDRB = 0xFF; PORTB = 0x00; // output
 
-    	PWM_on();
+	TimerSet(400);
+	TimerOn();
+
+   	PWM_on();
 	state = Start;
-	i = 0;
 
     	while (1) {
         	button0 = ~PINA & 0x01;
-        	button1 = ~PINA & 0x02;
-        	button2 = ~PINA & 0x04;
-
         	Tick();
+
+		while(!TimerFlag) {}
+		TimerFlag = 0;
     	}
     	return 1;
 }

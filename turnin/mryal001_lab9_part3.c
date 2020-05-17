@@ -55,7 +55,7 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum States{Start, off, play} state;
+enum States{Start, off, play, wait, repeat, release} state;
 
 unsigned char button0;
 
@@ -64,36 +64,72 @@ unsigned char i = 0;
 unsigned char j = 0;
 
 void button_Tick(){
-	switch(state){ // Transitions
+	switch(state) {
+		case Start:
+			state = off;
+			break;
 		case off:
 			if(button0){
 				i = 0;
-				j = 0;
 				state = play;
 			}
 			else
 				state= off;
 			break;
 		case play:
-			if(j < 2){
+			if (i < 25) {
+				i++;
 				state = play;
 			}
-			else{
+			else {
+				state = wait;
+			}
+			break;
+		case wait:
+			if (!button0) {
+				state = repeat;
+			}
+			else {
+				state = wait;
+			}
+			break;
+		case repeat:
+			if (button0) {
+				state = release;	
+			}
+			else {
+				state = wait;
+			}
+			break;
+		case release:
+			if (!button0) {
 				state = off;
 			}
-			if(i > 25){
-				j++;
+			else {
+				state = release;
 			}
-			i++;
+			break;
+		default:
+			state = Start;
 			break;
 	}
-	switch(state){ // State actions
+	switch(state){
+		case Start:
+			break;
 		case off:
 			set_PWM(0); //turn off
 			break;
 		case play:
 			set_PWM(notes[i]); //play note
-			set_PWM(0); //end laying note
+			//set_PWM(0); //end laying note
+			break;
+		case wait:
+			break;
+		case repeat:
+			break;
+		case release:
+			break;
+		default:
 			break;
 	}
 }
