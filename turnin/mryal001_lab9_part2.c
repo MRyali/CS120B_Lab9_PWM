@@ -54,80 +54,93 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum States {Start, push, release, inc, dec, on, off} state;
+enum States {Start, push, inc, incRelease, dec, decRelease, on, off, powerOff} state;
 
 unsigned char button0; //inc
 unsigned char button1; //dec
 unsigned char button2; //off
 
-const double notes[8] = {261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25};
-unsigned char i = 0; //index
-unsigned char power = 0; //0 means off, 1 means on
-unsigned char s = 0; //tracks increase (1), decrease (2), off (3), or on (4)
+const double notes[8] = {261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25}; //array of frequencies
+unsigned char i = 0; //index for array
 
 void Tick() {
 	switch(state) {
         	case Start:
-            		state = Wait;
+            		state = off;
             		break;
         	case push: //wait for button push
-			if (button0 && power == 1) {
-				s = 1;
-                		state = release;
-            		}
-            		else if (button1 && power = 1){
-				s = 2;
-                		state = release;
-            		}
-            		else if (button2){
-				if (power == 0) {
-					s = 4;
-                			state = release;
+			if (button0) { //increase
+				if (i < 7) {
+					i++;
 				}
-				else {
-					s = 3;
-                			state = release;
+				state = inc;
+            		}
+            		else if (button1){ //decrease
+				if (i > 0) {
+					i--;
 				}
+                		state = dec;
+            		}
+            		else if (button2){ //turn off
+				state = powerOff;
             		}
             		else {
-                		state = wait;
+                		state = push;
            		}
             		break;
-		case release:
-			if (s == 1 && !button0) {
-				state = inc;
+        	case inc:
+			/*
+			if (i < 7) { //next frequency
+				i++;
+			}*/
+			state = incRelease;
+			break;
+		case incRelease:
+			if (!button0) {
+				state = push;
 			}
-			else if (s == 2 && !button1) {
-				state = dec;
+			else {
+				state = incRelease;
 			}
-			else if (s == 3 && !button2) {
-				state = off;
+			break;
+		case dec:
+			/*
+			if (i > 0) {
+				i--;
+			}*/
+			state = decRelease;
+			break;
+		case decRelease:
+			if (!button1) {
+				state = push;
 			}
-			else if (s == 4 && !button2) {
+			else {
+				state = decRelease;
+			}
+			break;
+		case off:
+			if (button2) {
 				state = on;
 			}
 			else {
-				state = release;
+				state = off;
 			}
 			break;
-        	case inc:
-			s = 0;
-			state = push;
-			break;
-		case dec:
-			s = 0;
-			state = push;
-			break;
-		case off:
-			s = 0;
-			power = 0;
-			state = push;
-			break;
 		case on:
-			s = 0;
-			power = 1;
-			state = push;
+			if (!button2) {
+				state = push;
+			}
+			else {
+				state = on;
+			}
 			break;
+		case powerOff: 
+			if (!button2) {
+				state = off;
+			}
+			else {
+				state = powerOff;
+			}
         	default:
             		state = Start;
             		break;
@@ -136,32 +149,24 @@ void Tick() {
         	case Start:
             		break;
         	case push:
-            		set_PWM(0);
-            		break;
-        	case release:
-            		set_PWM(261.63);
             		break;
 		case inc:
-			i++;
-			if (i > 7) {
-				i = 7;
-			}
 			set_PWM(notes[i]);
+			break;
+		case incRelease:
 			break;
 		case dec:
-			i--;
-			if (i < 0) {
-				i = 0;
-			}
 			set_PWM(notes[i]);
 			break;
-       		 case off:
+		case decRelease:
+			break;
+       		case off:
 			PWM_off();
-			set_PWM(0);
+			break;
+		case powerOff:
 			break;
         	case on:
             		PWM_on();
-			set_PWM(notes[i]);
             		break;
         	default:
             		break;
@@ -174,7 +179,7 @@ int main(void) {
 
     	PWM_on();
 	state = Start;
-	power = 1;
+	i = 0;
 
     	while (1) {
         	button0 = ~PINA & 0x01;

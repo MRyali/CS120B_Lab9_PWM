@@ -11,6 +11,8 @@
 #include <avr/interrupt.h>
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
+#include "timer.h"
+#include "io.h"
 #endif
 
 // 0.954 hz is lowest frequency possible with this function,
@@ -98,15 +100,21 @@ void button_Tick(){
 
 
 int main(void) {
-    DDRA = 0x00; PORTA = 0xFF; // input
+    	DDRA = 0x00; PORTA = 0xFF; // input
 	DDRB = 0xFF; PORTB = 0x00; // output
 
-    PWM_on();
+	TimerSet(400);
+	TimerOn();
+
+   	PWM_on();
 	state = Start;
 
-    while (1) {
-        button0 = ~PINA & 0x01;
-        Tick();
-    }
-    return 1;
+    	while (1) {
+        	button0 = ~PINA & 0x01;
+        	Tick();
+
+		while(!TimerFlag) {}
+		TimerFlag = 0;
+    	}
+    	return 1;
 }

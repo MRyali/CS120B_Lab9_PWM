@@ -65,13 +65,13 @@ void Tick() {
             state = wait;
             break;
         case wait: //wait for button push
-            if (button0) {
+            if (button0 && !button1 && !button2) {
                 state = c4;
             }
-            else if (button1){
+            else if (button1 && !button0 && !button2){
                 state = d4;
             }
-            else if (button2){
+            else if (button2 && !button0 && !button1){
                 state = e4;
             }
             else {
@@ -79,7 +79,7 @@ void Tick() {
             }
             break;
         case c4:
-            if (button0) { //button is held
+            if (button0 && !button1 && !button2) { //button is held
                 state = c4;
             }
             else { //otherwise wait for new button press
@@ -87,7 +87,7 @@ void Tick() {
             }
             break;
         case d4:
-            if (button1) { //button is held
+            if (button1 && !button0 && !button2) { //button is held
                 state = d4;
             }
             else { //otherwise wait for new button press
@@ -95,7 +95,7 @@ void Tick() {
             }
             break;
         case e4:
-            if (button2) { //button is held
+            if (button2 && !button0 && !button1) { //button is held
                 state = e4;
             }
             else { //otherwise wait for new button press

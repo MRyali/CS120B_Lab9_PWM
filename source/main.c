@@ -1,7 +1,7 @@
 /*	Author: Mayur Ryali
  *  Partner(s) Name:
  *	Lab Section: 21
- *	Assignment: Lab #9  Exercise #1
+ *	Assignment: Lab #9  Exercise #2
  *	Exercise Description: [optional - include for your own benefit]
  *
  *	I acknowledge all content contained herein, excluding template or example
@@ -11,6 +11,7 @@
 #include <avr/interrupt.h>
 #ifdef _SIMULATE_
 #include "simAVRHeader.h"
+
 #endif
 
 // 0.954 hz is lowest frequency possible with this function,
@@ -53,92 +54,139 @@ void PWM_off() {
 	TCCR3B = 0x00;
 }
 
-enum States {Start, wait, c4, d4, e4} state;
+enum States {Start, push, inc, incRelease, dec, decRelease, on, off, powerOff} state;
 
-unsigned char button0;
-unsigned char button1;
-unsigned char button2;
+unsigned char button0; //inc
+unsigned char button1; //dec
+unsigned char button2; //off
+
+const double notes[8] = {261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25}; //array of frequencies
+unsigned char i = 0; //index for array
 
 void Tick() {
-    switch(state) {
-        case Start:
-            state = wait;
-            break;
-        case wait: //wait for button push
-            if (button0) {
-                state = c4;
-            }
-            else if (button1){
-                state = d4;
-            }
-            else if (button2){
-                state = e4;
-            }
-            else {
-                state = wait;
-            }
-            break;
-        case c4:
-            if (button0) { //button is held
-                state = c4;
-            }
-            else { //otherwise wait for new button press
-                state = wait;
-            }
-            break;
-        case d4:
-            if (button1) { //button is held
-                state = d4;
-            }
-            else { //otherwise wait for new button press
-                state = wait;
-            }
-            break;
-        case e4:
-            if (button2) { //button is held
-                state = e4;
-            }
-            else { //otherwise wait for new button press
-                state = wait;
-            }
-            break;
-        default:
-            state = Start;
-            break;
-    }
-    switch(state) {
-        case Start:
-            break;
-        case wait:
-            set_PWM(0);
-            break;
-        case c4:
-            set_PWM(261.63);
-            break;
-        case d4:
-            set_PWM(293.66);
-            break;
-        case e4:
-            set_PWM(329.63);
-            break;
-        default:
-            break;
-    }
+	switch(state) {
+        	case Start:
+            		state = off;
+            		break;
+        	case push: //wait for button push
+			if (button0) { //increase
+				if (i < 7) {
+					i++;
+				}
+				state = inc;
+            		}
+            		else if (button1){ //decrease
+				if (i > 0) {
+					i--;
+				}
+                		state = dec;
+            		}
+            		else if (button2){ //turn off
+				state = powerOff;
+            		}
+            		else {
+                		state = push;
+           		}
+            		break;
+        	case inc:
+			/*
+			if (i < 7) { //next frequency
+				i++;
+			}*/
+			state = incRelease;
+			break;
+		case incRelease:
+			if (!button0) {
+				state = push;
+			}
+			else {
+				state = incRelease;
+			}
+			break;
+		case dec:
+			/*
+			if (i > 0) {
+				i--;
+			}*/
+			state = decRelease;
+			break;
+		case decRelease:
+			if (!button1) {
+				state = push;
+			}
+			else {
+				state = decRelease;
+			}
+			break;
+		case off:
+			if (button2) {
+				state = on;
+			}
+			else {
+				state = off;
+			}
+			break;
+		case on:
+			if (!button2) {
+				state = push;
+			}
+			else {
+				state = on;
+			}
+			break;
+		case powerOff: 
+			if (!button2) {
+				state = off;
+			}
+			else {
+				state = powerOff;
+			}
+        	default:
+            		state = Start;
+            		break;
+	}
+    	switch(state) {
+        	case Start:
+            		break;
+        	case push:
+            		break;
+		case inc:
+			set_PWM(notes[i]);
+			break;
+		case incRelease:
+			break;
+		case dec:
+			set_PWM(notes[i]);
+			break;
+		case decRelease:
+			break;
+       		case off:
+			PWM_off();
+			break;
+		case powerOff:
+			break;
+        	case on:
+            		PWM_on();
+            		break;
+        	default:
+            		break;
+    	}
 }
 
 int main(void) {
-	DDRA = 0x00; PORTA = 0xFF; // input
-/*	Author: Mayur Ryali
- *  Partner(s) Name:
- *	Lab Section: 21
- *	Assignment: Lab #9  Exercise #3
- *	Exercise Description: [optional - include for your own benefit]
- *
- *	I acknowledge all content contained herein, excluding template or example
- *	code, is my own original work.
- */
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#ifdef _SIMULATE_
-#include "simAVRHeader.h"
-#endif
+    	DDRA = 0x00; PORTA = 0xFF; // input
+	DDRB = 0xFF; PORTB = 0x00; // output
+
+    	PWM_on();
+	state = Start;
+	i = 0;
+
+    	while (1) {
+        	button0 = ~PINA & 0x01;
+        	button1 = ~PINA & 0x02;
+        	button2 = ~PINA & 0x04;
+
+        	Tick();
+    	}
+    	return 1;
+}
