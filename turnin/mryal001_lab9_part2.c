@@ -7,6 +7,9 @@
  *	I acknowledge all content contained herein, excluding template or example
  *	code, is my own original work.
  */
+
+ // Demo: https://drive.google.com/open?id=11lJRmkrP7lnfV_GECdAzF1-6ASLORS_z
+
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #ifdef _SIMULATE_
@@ -135,7 +138,7 @@ void Tick() {
 				state = on;
 			}
 			break;
-		case powerOff: 
+		case powerOff:
 			if (!button2) {
 				state = off;
 			}
